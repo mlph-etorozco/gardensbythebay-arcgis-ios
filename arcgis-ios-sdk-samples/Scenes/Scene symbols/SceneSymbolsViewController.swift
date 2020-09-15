@@ -71,6 +71,9 @@ class SceneSymbolsViewController: UIViewController {
             return AGSGraphic(geometry: point, symbol: symbol)
         }
         
+        
+        
+        
         return graphics
     }
 }

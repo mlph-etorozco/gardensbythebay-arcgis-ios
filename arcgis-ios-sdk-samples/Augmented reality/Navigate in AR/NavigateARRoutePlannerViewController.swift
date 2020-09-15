@@ -208,6 +208,8 @@ class NavigateARRoutePlannerViewController: UIViewController {
 // MARK: - Set route start and end on touch
 
 extension NavigateARRoutePlannerViewController: AGSGeoViewTouchDelegate {
+    
+    
     public func geoView(_ geoView: AGSGeoView, didTapAtScreenPoint screenPoint: CGPoint, mapPoint: AGSPoint) {
         if startPoint == nil {
             startPoint = mapPoint

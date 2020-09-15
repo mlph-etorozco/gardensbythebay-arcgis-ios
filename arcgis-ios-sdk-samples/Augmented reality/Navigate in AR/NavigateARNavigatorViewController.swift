@@ -64,6 +64,8 @@ class NavigateARNavigatorViewController: UIViewController {
     /// The elevation surface set to the base surface of the scene.
     let elevationSurface = AGSSurface()
     
+    @IBOutlet weak var mapView: AGSMapView!
+    
     // MARK: Instance methods: initialize route and graphics
     
     /// Create a scene.
@@ -84,13 +86,22 @@ class NavigateARNavigatorViewController: UIViewController {
     func makeRouteOverlay() -> AGSGraphicsOverlay {
         let graphicsOverlay = AGSGraphicsOverlay()
         graphicsOverlay.sceneProperties?.surfacePlacement = .absolute
+        
         let strokeSymbolLayer = AGSSolidStrokeSymbolLayer(
             width: 1.0,
             color: .yellow,
             geometricEffects: [],
             lineStyle3D: .tube
         )
-        let polylineSymbol = AGSMultilayerPolylineSymbol(symbolLayers: [strokeSymbolLayer])
+        
+        let stripSymbolLayer = AGSSolidStrokeSymbolLayer(
+            width: 1.0,
+            color: .blue,
+            geometricEffects: [],
+            lineStyle3D: .tube
+        )
+        
+        let polylineSymbol = AGSMultilayerPolylineSymbol(symbolLayers: [strokeSymbolLayer, stripSymbolLayer])
         let polylineRenderer = AGSSimpleRenderer(symbol: polylineSymbol)
         graphicsOverlay.renderer = polylineRenderer
         graphicsOverlay.graphics.add(routeGraphic)
@@ -105,6 +116,7 @@ class NavigateARNavigatorViewController: UIViewController {
     func setRouteAndGraphic(route: AGSRoute, onSuccess completion: (() -> Void)? = nil) {
         currentRoute = route
         let originalPolyline = route.routeGeometry!
+        
         elevationSource.load { [weak self] (error: Error?) in
             guard let self = self else { return }
             if let error = error {
@@ -187,10 +199,27 @@ class NavigateARNavigatorViewController: UIViewController {
         trackingLocationDataSource.start()
         // Set the route solved by route planner to the scene.
         // On success, enable calibration adjustment.
-        setRouteAndGraphic(route: routeResult.routes.first!) { [weak self] in
+        self.setRouteAndGraphic(route: routeResult.routes.first!) { [weak self] in
             guard let self = self else { return }
             self.calibrateButtonItem.isEnabled = true
             self.setStatus(message: "Adjust calibration before starting.")
+        }
+        
+        //initialize map with a basemap
+        self.mapView.map = AGSMap(basemap: .navigationVector())
+        self.mapView.graphicsOverlays.add(makeRouteOverlay())
+        
+        self.mapView.locationDisplay.autoPanMode = .compassNavigation
+        self.arView.addSubview(self.mapView)
+        
+        self.mapView.clipsToBounds = true
+        self.mapView.layer.cornerRadius = self.mapView.bounds.width / 2
+        self.mapView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
+        
+        self.mapView.locationDisplay.start { [weak self] (error) in
+            if let error = error {
+                self?.setStatus(message: error.localizedDescription)
+            }
         }
     }
     
@@ -208,6 +237,7 @@ class NavigateARNavigatorViewController: UIViewController {
 // MARK: - Route navigation status changes
 
 extension NavigateARNavigatorViewController: AGSRouteTrackerDelegate {
+    
     func routeTracker(_ routeTracker: AGSRouteTracker, didGenerateNewVoiceGuidance voiceGuidance: AGSVoiceGuidance) {
         setSpeakDirection(with: voiceGuidance.text)
     }

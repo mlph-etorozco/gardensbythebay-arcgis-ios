@@ -75,6 +75,10 @@ class NavigateRouteViewController: UIViewController {
         case .success(let routeResult):
             self.routeResult = routeResult
             let firstRoute = routeResult.routes.first!
+            
+            
+            firstRoute.totalLength
+            
             mapView.locationDisplay.dataSource = makeDataSource(route: firstRoute)
             routeTracker = makeRouteTracker(result: routeResult)
             updateRouteGraphics(remaining: firstRoute.routeGeometry!)
@@ -234,6 +238,7 @@ class NavigateRouteViewController: UIViewController {
                         self?.didSolveRoute(with: .success(result))
                     }
                 }
+                
             }
         }
         // Add the source code button item to the right of navigation bar.
